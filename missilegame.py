@@ -42,7 +42,7 @@ ship_min_y = 50
 ship_max_y = 520
 
 impactsheet = imagesheet.ImageSheet(impact_string, 5, 6)
-incomingsheet = imagesheet.ImageSheet(incoming_string, 5, 6)
+incomingsheet = imagesheet.ImageSheet(incoming_string, 5, 3)
 
 missile_speed = 0.5
 background_speed = 0.1
@@ -54,6 +54,8 @@ background = sprite.Sprite(background_string, 0, 0)         # pylint: disable=E1
 missiles = []
 incoming = []
 impacts = []
+
+enemies_to_remove = []
 
 # Setup drawing loop
 drawing = True
@@ -87,12 +89,14 @@ while drawing:
     # Move the missiles
     for missile in missiles:
         missile.center_x += missile_speed * c.get_time()
+
+        # Check if we hit an enemy
         for enemy in incoming:
             if pygame.sprite.collide_rect(missile, enemy):
-                # Add a collision animation
+                # Add a collision animation, and mark the enemy for removal
                 x,y = pygame.sprite.collide_mask(missile, enemy)
                 impacts.append(sprite.Sprite(impactsheet, x, y))
-
+                enemies_to_remove.append(enemy)
     
     # Check if we should spawn a new enemy
     enemy_time -= c.get_time()
@@ -121,6 +125,21 @@ while drawing:
     
     for missile in missiles_gone:
         missiles.remove(missile)
+
+    # Figure out if an enemy is offscreen
+    for enemy in incoming:
+        if enemy.center_x < -1*enemy.rect.width/2:
+            enemies_to_remove.append(enemy)
+
+    # Remove all the enemies
+    for enemy in enemies_to_remove:
+        incoming.remove(enemy)
+
+    # Move and draw all the enemies
+    for enemy in incoming:
+        enemy.center_x -= enemy_speed * c.get_time()
+        enemy.update(c.get_time())
+        enemy.draw()
 
     pygame.display.flip()
     c.tick(30)
